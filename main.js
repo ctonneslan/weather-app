@@ -4,11 +4,8 @@ const GIPHY_KEY = "7hOvll3XDu1kqUu93k0dUM5O8IHoZaXN";
 const locationInput = document.getElementById("location-input");
 const unitToggle = document.getElementById("unit-toggle");
 const getWeatherBtn = document.getElementById("get-weather-btn");
-
-const locationName = document.getElementById("location-name");
-const description = document.getElementById("description");
-const temperature = document.getElementById("temperature");
-const weatherGif = document.getElementById("weather-gif");
+const forecastContainer = document.getElementById("forecast");
+const locationTitle = document.getElementById("location-title");
 
 async function fetchWeather(location, unitGroup) {
   const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
@@ -19,16 +16,13 @@ async function fetchWeather(location, unitGroup) {
   return response.json();
 }
 
-async function fetchGif(searchTerm) {
+async function fetchGif(condition) {
   const url = `https://api.giphy.com/v1/gifs/translate?api_key=${GIPHY_KEY}&s=${encodeURIComponent(
-    searchTerm
-  )}`;
+    condition
+  )} weather`;
   const response = await fetch(url);
   const data = await response.json();
-  if (data.data?.images?.original?.url) {
-    return data.data.images.original.url;
-  }
-  throw new Error("No GIF found");
+  return data.data?.images?.fixed_height_small?.url || "";
 }
 
 function updateBackground(temp, unit) {
@@ -44,7 +38,7 @@ function updateBackground(temp, unit) {
   }
 }
 
-async function displayWeather() {
+async function displayForecast() {
   const location = locationInput.value.trim();
   const unit = unitToggle.value;
 
@@ -55,43 +49,57 @@ async function displayWeather() {
 
   try {
     const weatherData = await fetchWeather(location, unit);
-    const current = weatherData.currentConditions;
-    const temp = current.temp;
-    const desc = current.conditions;
+    const days = weatherData.days.slice(0, 7); // 7-day forecast
+    forecastContainer.innerHTML = "";
+    locationTitle.textContent = weatherData.resolvedAddress;
 
-    locationName.textContent = weatherData.resolvedAddress;
-    description.textContent = `Condition: ${desc}`;
-    temperature.textContent = `Temperature: ${temp}° ${
-      unit === "us" ? "F" : "C"
-    }`;
+    // Set background based on today's temp
+    updateBackground(days[0].temp, unit);
 
-    updateBackground(temp, unit);
+    for (let day of days) {
+      const card = document.createElement("div");
+      card.className = "day-card";
 
-    try {
-      const gifUrl = await fetchGif(desc);
-      weatherGif.src = gifUrl;
-      weatherGif.alt = desc;
-    } catch {
-      weatherGif.src = "";
+      const date = new Date(day.datetime).toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+      const condition = day.conditions;
+      const tempHigh = day.tempmax;
+      const tempLow = day.tempmin;
+
+      let gifUrl = "";
+      try {
+        gifUrl = await fetchGif(condition);
+      } catch (err) {
+        gifUrl = "";
+      }
+
+      card.innerHTML = `
+            <h3>${date}</h3>
+            <p>${condition}</p>
+            <p>High: ${tempHigh}°</p>
+            <p>Low: ${tempLow}°</p>
+            ${gifUrl ? `<img src="${gifUrl}" alt="${condition}">` : ""}
+          `;
+
+      forecastContainer.appendChild(card);
     }
   } catch (err) {
-    locationName.textContent = "";
-    description.textContent = "";
-    temperature.textContent = "";
-    weatherGif.src = "";
-    alert("Sorry, we couldn't find weather data for that location.");
+    forecastContainer.innerHTML = "";
+    locationTitle.textContent = "";
+    alert("Failed to load weather data.");
     console.error(err);
   }
 }
 
-getWeatherBtn.addEventListener("click", displayWeather);
-
+getWeatherBtn.addEventListener("click", displayForecast);
 locationInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") displayWeather();
+  if (e.key === "Enter") displayForecast();
 });
 
-// Optional: Load default location
 window.addEventListener("load", () => {
   locationInput.value = "New York";
-  displayWeather();
+  displayForecast();
 });

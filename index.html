@@ -3,24 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Weather Forecast</title>
+  <title>7-Day Weather Forecast</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>🌤️ Weather Forecast</h1>
+  <h1>🌤️ 7-Day Weather Forecast</h1>
   <input type="text" id="location-input" placeholder="Enter a city (e.g. Paris)">
   <select id="unit-toggle">
     <option value="us">Fahrenheit (°F)</option>
     <option value="metric">Celsius (°C)</option>
   </select>
-  <button id="get-weather-btn">Get Weather</button>
+  <button id="get-weather-btn">Get Forecast</button>
 
-  <div id="weather">
-    <h2 id="location-name"></h2>
-    <p id="description"></p>
-    <p id="temperature"></p>
-    <img id="weather-gif" src="" alt="">
-  </div>
+  <div id="location-title"></div>
+  <div id="forecast"></div>
 
   <script src="main.js"></script>
 </body>
